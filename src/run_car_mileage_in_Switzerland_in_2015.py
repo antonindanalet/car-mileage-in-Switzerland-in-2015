@@ -22,7 +22,35 @@ def run_car_mileage_in_switzerland_in_2015():
 
 
 def plot_figure_in_french(df_km_per_interval, nb_observations):
+    dict_title = {'fr': 'Répartition du kilométrage des voitures privées, en 2015',
+                  'de': 'Verteilung der Fahrleistung der Privatwagen, 2015',
+                  'en': 'Cumulative distribution of mileage of private cars, in 2015'}
+    dict_x_label = {'fr': "Proportion des véhicules privés dans l'ordre croissant de leur kilométrage",
+                    'de': 'Anteil der Privatwagen in aufsteigender Reihenfolge ihrer Fahrleistung',
+                    'en': 'Proportion of privately owned vehicles in the increasing order of mileage'}
+    dict_y_label = {'fr': 'Proportion du kilométrage total des voitures privées',
+                    'de': 'Anteil der gesamten Fahrleistung von Privatwagen',
+                    'en': 'Proportion of total mileage of privately owned cars'}
     cumulative_nb_km_prop_for_70_pc = int(round(100 * df_km_per_interval.iloc[7]['cumulative_weighted_nb_km_prop']))
+    dict_example = {'fr': 'Exemple de lecture: en 2015, 70% des voitures privées qui avaient parcouru le kilométrage '
+                          'le plus faible lors des 12 mois\n'
+                          'précédents ont réalisé ' + str(cumulative_nb_km_prop_for_70_pc) +
+                          '% du kilométrage total des voitures privées.\n\n'
+                          'Base: ' + str("{0:,g}".format(nb_observations)).replace(",", " ") +
+                          ' voitures privées dont le kilométrage des 12 derniers mois est connu\n\n'
+                          'Source: OFS, ARE - Microrecensement mobilité et transports (MRMT)',
+                    'de': 'Lesebeispiel: 2015 haben 70% der Privatwagen, die die kleinste Fahrleistung in den letzten '
+                          '12 Monaten zurückgelegt hatten, ' + str(cumulative_nb_km_prop_for_70_pc) +
+                          '% der gesamten Fahrleistung von Privatwagen geleistet.\n\n'
+                          'Basis: ' + str("{0:,g}".format(nb_observations)).replace(",", " ") +
+                          ' Privatwagen mit gültigen Angaben zur Jahresfahrleistung\n\n'
+                          'Quelle: BFS, ARE - Mikrozensus Mobilität und Verkehr (MZMV)',
+                    'en': 'Reading example: in 2015, 70% of privately owned cars with the smallest mileage in the 12 '
+                          'last months traveled ' + str(cumulative_nb_km_prop_for_70_pc) +
+                          'of the total mileage of privately owned cars.\n\n'
+                          'Basis: ' + str("{0:,g}".format(nb_observations)).replace(",", " ") +
+                          ' privately owned car with a valid mileage the last 12 months\n\n'
+                          'Source: FSO, ARE - Mobility and Transport Microcensus (MTMC)'}
     sns.set(rc={'figure.figsize': (6.4, 6)})
     sns.set_style("whitegrid", {'axes.spines.bottom': False,
                                 'axes.spines.left': False,
@@ -32,21 +60,14 @@ def plot_figure_in_french(df_km_per_interval, nb_observations):
                              data=df_km_per_interval)
     sns_plot.set(yticklabels=['', '0%', '20%', '40%', '60%', '80%', '100%'])
     sns_plot.set(xticklabels=['0%', '10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'])
-    plt.text(x=-2.15, y=1.16, s='Répartition du kilométrage des voitures privées, en 2015', fontsize=16, weight='bold')
-    plt.text(x=-2.15, y=-0.5, s='Exemple de lecture: en 2015, 70% des voitures privées qui avaient parcouru le '
-                                'kilométrage le plus faible lors des 12 mois\n'
-                                'précédents avaient réalisé ' + str(cumulative_nb_km_prop_for_70_pc) +
-                                '% du kilométrage total des voitures privées.\n\n'
-                                'Base: ' + str("{0:,g}".format(nb_observations)).replace(",", " ") +
-                                ' voitures privées dont le kilométrage est connu\n\n'
-                                'Source: OFS, ARE - Microrecensement mobilité et transports (MRMT)',
-             fontsize=8, alpha=0.75)
     plt.subplots_adjust(bottom=0.28)
-    sns_plot.set_xlabel("Proportion des véhicules dans l'ordre du plus petit au plus grand kilométrage")
-    sns_plot.set_ylabel('Proportion du kilométrage total des voitures privées')
-
-    sns_figure = sns_plot.get_figure()
-    sns_figure.savefig('../data/output/car_mileage_in_Switzerland_in_2015.png', dpi=600)
+    for language in ['fr', 'de', 'en']:
+        plt.text(x=-2.15, y=1.16, s=dict_title[language], fontsize=16, weight='bold')
+        plt.text(x=-2.15, y=-0.5, s=dict_example[language], fontsize=8, alpha=0.75)
+        sns_plot.set_xlabel(dict_x_label[language])
+        sns_plot.set_ylabel(dict_y_label[language])
+        sns_figure = sns_plot.get_figure()
+        sns_figure.savefig('../data/output/car_mileage_in_Switzerland_in_2015_' + language + '.png', dpi=600)
 
 
 def sum_observations_by_intervals(df_vehicles, nb_intervals):
