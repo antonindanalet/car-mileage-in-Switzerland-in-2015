@@ -1,5 +1,5 @@
 # Distribution of the mileage of private cars in Switzerland in 2015
-This code computes the distribution of mileage of private cars in Switzerland in 2015, based on the data of the Transport and Mobility Microcensus (MTMC, www.are.admin.ch/mtmc). As an example, 70% of private cars with the lowest mileage in the last 12 months travel 41% of the total mileage of private cars. This code generates a figure presenting the results and the results as a CSV-file containing the cumulative proportion of total mileage for each group of 10% of the vehicles (in increasing order of mileage).
+This code computes the distribution of mileage of private cars in Switzerland in 2015, based on the data of the Transport and Mobility Microcensus (MTMC, www.are.admin.ch/mtmc). As an example, 70% of private cars with the lowest mileage in the last 12 months travel 41% of the total mileage of private cars. This code generates a figure (available in French, German and English) presenting the results and the results as a CSV-file containing the cumulative proportion of total mileage for each group of 10% of the vehicles (in increasing order of mileage).
 
 The figure will be published on Twitter.
 
