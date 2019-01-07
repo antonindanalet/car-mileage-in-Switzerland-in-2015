@@ -40,28 +40,29 @@ def plot_figure_in_french(df_km_per_interval, nb_observations):
                           ' voitures privées dont le kilométrage des 12 derniers mois est connu\n\n'
                           'Source: OFS, ARE - Microrecensement mobilité et transports (MRMT)',
                     'de': 'Lesebeispiel: 2015 haben 70% der Privatwagen, die die kleinste Fahrleistung in den letzten '
-                          '12 Monaten zurückgelegt hatten, ' + str(cumulative_nb_km_prop_for_70_pc) +
+                          '12 Monaten zurückgelegt hatten,\n' + str(cumulative_nb_km_prop_for_70_pc) +
                           '% der gesamten Fahrleistung von Privatwagen geleistet.\n\n'
                           'Basis: ' + str("{0:,g}".format(nb_observations)).replace(",", " ") +
-                          ' Privatwagen mit gültigen Angaben zur Jahresfahrleistung\n\n'
+                          ' Privatwagen mit gültigen Angaben zur Jahresfahrleistung\n\n'
                           'Quelle: BFS, ARE - Mikrozensus Mobilität und Verkehr (MZMV)',
                     'en': 'Reading example: in 2015, 70% of privately owned cars with the smallest mileage in the 12 '
-                          'last months traveled ' + str(cumulative_nb_km_prop_for_70_pc) +
-                          'of the total mileage of privately owned cars.\n\n'
+                          'last months traveled\n' + str(cumulative_nb_km_prop_for_70_pc) +
+                          '% of the total mileage of privately owned cars.\n\n'
                           'Basis: ' + str("{0:,g}".format(nb_observations)).replace(",", " ") +
-                          ' privately owned car with a valid mileage the last 12 months\n\n'
+                          ' privately owned cars with a valid mileage the last 12 months\n\n'
                           'Source: FSO, ARE - Mobility and Transport Microcensus (MTMC)'}
-    sns.set(rc={'figure.figsize': (6.4, 6)})
+    sns.set(rc={'figure.figsize': (6.4, 5.8)})
     sns.set_style("whitegrid", {'axes.spines.bottom': False,
                                 'axes.spines.left': False,
                                 'axes.spines.right': False,
                                 'axes.spines.top': False})
-    sns_plot = sns.pointplot(x='cumulative_household_weight_prop', y='cumulative_weighted_nb_km_prop',
-                             data=df_km_per_interval)
-    sns_plot.set(yticklabels=['', '0%', '20%', '40%', '60%', '80%', '100%'])
-    sns_plot.set(xticklabels=['0%', '10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'])
-    plt.subplots_adjust(bottom=0.28)
+    plt.subplots_adjust(bottom=0.26)
     for language in ['fr', 'de', 'en']:
+        plt.clf()
+        sns_plot = sns.pointplot(x='cumulative_household_weight_prop', y='cumulative_weighted_nb_km_prop',
+                                 data=df_km_per_interval)
+        sns_plot.set(yticklabels=['', '0%', '20%', '40%', '60%', '80%', '100%'])
+        sns_plot.set(xticklabels=['0%', '10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'])
         plt.text(x=-2.15, y=1.16, s=dict_title[language], fontsize=16, weight='bold')
         plt.text(x=-2.15, y=-0.5, s=dict_example[language], fontsize=8, alpha=0.75)
         sns_plot.set_xlabel(dict_x_label[language])
