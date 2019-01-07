@@ -9,19 +9,18 @@ def run_car_mileage_in_switzerland_in_2015():
     df_vehicles, nb_observations = get_nb_km_in_last_12_months_with_weights()
     # Sum observations by intervals
     df_km_per_interval = sum_observations_by_intervals(df_vehicles, nb_intervals=10)
-    # df_km_per_interval.loc[0] = [0, 0]
+    # Add the data point (0,0) for the visualization
     df_with_0_0 = pd.DataFrame([[0, 0]], columns=['cumulative_household_weight_prop', 'cumulative_weighted_nb_km_prop'])
     df_km_per_interval = df_with_0_0.append(df_km_per_interval)
-    # Plot figure
-    plot_figure_in_french(df_km_per_interval, nb_observations)
-    # ...
+    # Plot figure in French, German and English
+    plot_figures(df_km_per_interval, nb_observations)
     # Save table as CSV
     df_km_per_interval.to_csv('../data/output/car_mileage_in_Switzerland_in_2015.csv', sep=';', index=False,
                               header=['Cumulative proportion of private cars, in increasing order of mileage',
                                       'Cumulative proportion of total mileage'])
 
 
-def plot_figure_in_french(df_km_per_interval, nb_observations):
+def plot_figures(df_km_per_interval, nb_observations):
     dict_title = {'fr': 'Répartition du kilométrage des voitures privées, en 2015',
                   'de': 'Verteilung der Fahrleistung der Privatwagen, 2015',
                   'en': 'Cumulative distribution of mileage of private cars, in 2015'}
