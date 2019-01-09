@@ -36,21 +36,24 @@ def plot_figures(df_km_per_interval, nb_observations):
                           'précédents ont réalisé ' + str(cumulative_nb_km_prop_for_70_pc) +
                           '% du kilométrage total des voitures privées.\n\n'
                           'Base: ' + str("{0:,g}".format(nb_observations)).replace(",", " ") +
-                          ' voitures privées dont le kilométrage des 12 derniers mois est connu\n\n'
+                          ' voitures privées qui ont été mises en circulation avant 2015 et avec indication valable de '
+                          "l'âge du véhicule et\ndes prestations kilométriques annuelles\n\n"
                           'Source: OFS, ARE - Microrecensement mobilité et transports (MRMT)',
                     'de': 'Lesebeispiel: 2015 haben 70% der Privatwagen, die die kleinste Fahrleistung in den letzten '
                           '12 Monaten zurückgelegt hatten,\n' + str(cumulative_nb_km_prop_for_70_pc) +
                           '% der gesamten Fahrleistung von Privatwagen geleistet.\n\n'
                           'Basis: ' + str("{0:,g}".format(nb_observations)).replace(",", " ") +
-                          ' Privatwagen mit gültigen Angaben zur Jahresfahrleistung\n\n'
+                          ' Privatwagen, die vor 2015 in Verkehr gesetzt wurden und gültige Angaben zum Fahrzeugalter '
+                          'und zur\nJahresfahrleistung aufweisen\n\n'
                           'Quelle: BFS, ARE - Mikrozensus Mobilität und Verkehr (MZMV)',
                     'en': 'Reading example: in 2015, 70% of privately owned cars with the smallest mileage in the 12 '
                           'last months traveled\n' + str(cumulative_nb_km_prop_for_70_pc) +
                           '% of the total mileage of privately owned cars.\n\n'
                           'Basis: ' + str("{0:,g}".format(nb_observations)).replace(",", " ") +
-                          ' privately owned cars with a valid mileage the last 12 months\n\n'
+                          ' privately owned cars that were put into service before 2015 and with a valid age of the '
+                          'vehicule and mileage\nin the last 12 months\n\n'
                           'Source: FSO, ARE - Mobility and Transport Microcensus (MTMC)'}
-    sns.set(rc={'figure.figsize': (6.4, 5.8)})
+    sns.set(rc={'figure.figsize': (6.4, 6.0)})
     sns.set_style("whitegrid", {'axes.spines.bottom': False,
                                 'axes.spines.left': False,
                                 'axes.spines.right': False,
@@ -91,7 +94,7 @@ def sum_observations_by_intervals(df_vehicles, nb_intervals):
 
 
 def get_nb_km_in_last_12_months_with_weights():
-    selected_columns = ['WM', 'fahrzeugart', 'f30800_31600', 'f30900_31700']
+    selected_columns = ['WM', 'fahrzeugart', 'f30800_31600', 'f30900_31700', 'f30600_31500', 'f30601_31501']
     df_vehicles = get_vehicles(selected_columns=selected_columns)
     # Rename variables
     df_vehicles = df_vehicles.rename(columns={'WM': 'household_weight',
@@ -103,10 +106,24 @@ def get_nb_km_in_last_12_months_with_weights():
                                               # -98: no answer,
                                               # -99: no mileage (0 km) or
                                               # no answer to question about total mileage
+                                              'f30600_31500': 'matriculation_year',  # -98: no answer
+                                                                                     # -97: doesn't know
+                                              'f30601_31501': 'matriculation_month'  # -99: before 2014 and not in MOFIS
+                                                                                     # -98: no answer
+                                                                                     # -97: doesn't know
                                               })
     # Select cars only (no motorbikes)
     df_vehicles = df_vehicles[df_vehicles['type_of_vehicle'] == 1]
     del df_vehicles['type_of_vehicle']
+    # Select only cars with matriculation year before 2015
+    df_vehicles = df_vehicles[df_vehicles['matriculation_year'] < 2015]
+    df_vehicles = df_vehicles[df_vehicles['matriculation_year'] != -98]
+    df_vehicles = df_vehicles[df_vehicles['matriculation_year'] != -97]
+    del df_vehicles['matriculation_year']
+    # Select only cars with matriculation month known
+    df_vehicles = df_vehicles[df_vehicles['matriculation_month'] != -98]
+    df_vehicles = df_vehicles[df_vehicles['matriculation_month'] != -97]
+    del df_vehicles['matriculation_month']
     # Replace the -99 value by 0 in the nb of km in the last 12 months if the vehicle has no mileage at all
     df_vehicles.loc[df_vehicles['total_mileage'] == 0, 'nb_km_in_last_12_months'] = 0
     del df_vehicles['total_mileage']
@@ -115,7 +132,7 @@ def get_nb_km_in_last_12_months_with_weights():
     df_vehicles = df_vehicles[df_vehicles.nb_km_in_last_12_months != -98]
     df_vehicles = df_vehicles[df_vehicles.nb_km_in_last_12_months != -99]
     nb_observations = len(df_vehicles)
-    print('Number of private cars with known mileage:', nb_observations)
+    print('Number of private cars with known mileage and known matriculation time:', nb_observations)
     ''' Sort the nb of km made in the last 12 months:
     Here we sort by the nb of km in the last 12 months and not by the *weighted* nb of km in the last 12 months. 
     A vehicle with a high mileage, say 40'000 km in the last 12 months, must be at the top of ranking, independently of 
