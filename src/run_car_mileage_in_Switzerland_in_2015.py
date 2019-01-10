@@ -55,8 +55,8 @@ def plot_figures(df_km_per_interval, nb_observations):
                           'traveled ' + str(cumulative_nb_km_prop_for_70_pc) +
                           '% of the total mileage\nof privately owned cars.\n\n'
                           'Basis: ' + str("{0:,g}".format(nb_observations)).replace(",", " ") +
-                          ' cars that were put into service before 2015 and with a valid age of the '
-                          'vehicule and mileage\nin the last 12 months\n\n'
+                          ' cars that were put into service before 2015 and with a valid age of the vehicule and '
+                          'mileage in the last 12 months\n\n'
                           'Source: FSO, ARE - Mobility and Transport Microcensus (MTMC)'}
     sns.set(rc={'figure.figsize': (6.4, 6.4)})
     sns.set_style("whitegrid", {'axes.spines.bottom': False,
