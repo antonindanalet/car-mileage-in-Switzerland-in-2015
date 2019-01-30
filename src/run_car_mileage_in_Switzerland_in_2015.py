@@ -3,24 +3,53 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
 
 def run_car_mileage_in_switzerland_in_2015():
+    nb_intervals = 10
     df_vehicles, nb_observations = get_nb_km_in_last_12_months_with_weights()
+    ''' Cumulative distribution function: prepare data, plot them and save them as CSV '''
     # Sum observations by intervals
-    df_km_per_interval = sum_observations_by_intervals(df_vehicles, nb_intervals=10)
+    df_km_per_interval = sum_observations_by_intervals(df_vehicles, nb_intervals=nb_intervals)
     # Add the data point (0,0) for the visualization
     df_with_0_0 = pd.DataFrame([[0, 0]], columns=['cumulative_household_weight_prop', 'cumulative_weighted_nb_km_prop'])
     df_km_per_interval = df_with_0_0.append(df_km_per_interval)
     # Plot figure in French, German and English
-    plot_figures(df_km_per_interval, nb_observations)
+    plot_ecdf_figures(df_km_per_interval, nb_observations)
     # Save table as CSV
-    df_km_per_interval.to_csv('../data/output/car_mileage_in_Switzerland_in_2015.csv', sep=';', index=False,
-                              header=['Cumulative proportion of private cars, in increasing order of mileage',
-                                      'Cumulative proportion of total mileage'])
+    df_km_per_interval[['cumulative_household_weight_prop',
+                        'cumulative_weighted_nb_km_prop']]\
+        .to_csv(os.path.join('..', 'data', 'output', 'empirical_cumulative_distribution_function',
+                             'car_mileage_in_Switzerland_in_2015.csv'),
+                sep=';',
+                index=False,
+                header=['Cumulative proportion of private cars, in increasing order of mileage',
+                        'Cumulative proportion of total mileage'])
+    ''' Average mileage per interval '''
+    df_vehicles = df_vehicles[df_vehicles.nb_km_abroad != -97]
+    df_vehicles = df_vehicles[df_vehicles.nb_km_abroad != -98]
+    nb_observations = len(df_vehicles)
+    sum_weights = df_vehicles['household_weight'].sum()
+    sum_nb_km_in_last_12_months = df_vehicles['weighted_nb_km'].sum()
+    length_intervals = sum_weights / nb_intervals
+    array_of_intervals = np.arange(0, sum_weights+1, length_intervals)
+    df_km_per_interval = df_vehicles.groupby(pd.cut(df_vehicles['cumulative_household_weight'],
+                                                    array_of_intervals)).apply(lambda x: x['weighted_nb_km'].sum() / x['household_weight'].sum())
+    print(df_km_per_interval)
+    print('Number of private cars with known mileage and known matriculation time:', nb_observations)
+    nb_km_in_last_12_months = df_vehicles['weighted_nb_km'].sum() / df_vehicles['household_weight'].sum()
+    print('Number of kilometers in the last 12 months:', nb_km_in_last_12_months)
 
 
-def plot_figures(df_km_per_interval, nb_observations):
+
+def weigthed_average(group):
+    d = group['data']
+    w = group['weights']
+    return (d * w).sum() / w.sum()
+
+
+def plot_ecdf_figures(df_km_per_interval, nb_observations):
     dict_title = {'fr': 'Répartition des prestations kilométriques des voitures,\nen 2015',
                   'de': 'Verteilung der Fahrleistung der Personenwagen, 2015',
                   'en': 'Cumulative distribution of mileage of cars in 2015'}
@@ -80,7 +109,8 @@ def plot_figures(df_km_per_interval, nb_observations):
         sns_plot.set_xlabel(dict_x_label[language])
         sns_plot.set_ylabel(dict_y_label[language])
         sns_figure = sns_plot.get_figure()
-        sns_figure.savefig('../data/output/car_mileage_in_Switzerland_in_2015_' + language + '.png', dpi=600)
+        sns_figure.savefig('../data/output/empirical_cumulative_distribution_function/'
+                           'car_mileage_in_Switzerland_in_2015_' + language + '.png', dpi=600)
 
 
 def sum_observations_by_intervals(df_vehicles, nb_intervals):
@@ -104,7 +134,7 @@ def sum_observations_by_intervals(df_vehicles, nb_intervals):
 
 
 def get_nb_km_in_last_12_months_with_weights():
-    selected_columns = ['WM', 'fahrzeugart', 'f30900_31700', 'f30600_31500']
+    selected_columns = ['WM', 'fahrzeugart', 'f30900_31700', 'f30600_31500', 'f31000_31800']
     df_vehicles = get_vehicles(selected_columns=selected_columns)
     # Rename variables
     df_vehicles = df_vehicles.rename(columns={'WM': 'household_weight',
@@ -115,8 +145,11 @@ def get_nb_km_in_last_12_months_with_weights():
                                                                                           # -99: no mileage (0 km) or
                                                                                           #      no answer to question
                                                                                           #      about total mileage
-                                              'f30600_31500': 'matriculation_year'  # -98: no answer
-                                                                                    # -97: doesn't know
+                                              'f30600_31500': 'matriculation_year',  # -98: no answer
+                                                                                     # -97: doesn't know
+                                              'f31000_31800': 'nb_km_abroad'  # -99: nb_km_in_last_12_months = 0 or -99
+                                                                              # -98: no answer
+                                                                              # -97: doesn't know
                                               })
     # Select cars only (no motorbikes)
     df_vehicles = df_vehicles[df_vehicles['type_of_vehicle'] == 1]
