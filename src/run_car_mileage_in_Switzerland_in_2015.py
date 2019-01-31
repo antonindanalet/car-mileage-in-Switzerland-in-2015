@@ -35,12 +35,15 @@ def run_car_mileage_in_switzerland_in_2015():
     length_intervals = sum_weights / nb_intervals
     array_of_intervals = np.arange(0, sum_weights+1, length_intervals)
     df_km_per_interval = df_vehicles.groupby(pd.cut(df_vehicles['cumulative_household_weight'],
-                                                    array_of_intervals)).apply(lambda x: x['weighted_nb_km'].sum() / x['household_weight'].sum())
-    print(df_km_per_interval)
+                                                    array_of_intervals)).apply(lambda x: x['weighted_nb_km'].sum() /
+                                                                                         x['household_weight'].sum())
+    df_km_per_interval.to_csv(os.path.join('..', 'data', 'output', 'average_per_interval',
+                                           'average_per_interval.csv'),
+                              sep=';',
+                              index=False)
     print('Number of private cars with known mileage and known matriculation time:', nb_observations)
     nb_km_in_last_12_months = df_vehicles['weighted_nb_km'].sum() / df_vehicles['household_weight'].sum()
     print('Number of kilometers in the last 12 months:', nb_km_in_last_12_months)
-
 
 
 def weigthed_average(group):
