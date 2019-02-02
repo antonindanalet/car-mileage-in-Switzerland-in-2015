@@ -5,7 +5,7 @@
       <sourceFolder url="file://$MODULE_DIR$/src/utils_mtmc" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/venv" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="Python 3.4 (car-mileage-in-Switzerland-in-2015)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="TestRunnerService">
