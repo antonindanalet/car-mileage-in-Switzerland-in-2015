@@ -44,9 +44,9 @@ def get_average_mileage_per_interval(df_vehicles, nb_intervals):
     df_km_per_interval.to_csv(os.path.join('..', 'data', 'output', 'average_per_interval',
                                            'average_per_interval.csv'),
                               sep=';',
-                              index=False)
+                              index=False,
+                              header=False)
     print('Number of private cars with known mileage and known matriculation time:', nb_observations)
-
 
 
 def get_ecdf(nb_intervals, df_vehicles, nb_observations):
@@ -54,7 +54,7 @@ def get_ecdf(nb_intervals, df_vehicles, nb_observations):
     df_km_per_interval = sum_observations_by_intervals(df_vehicles, nb_intervals=nb_intervals)
     # Add the data point (0,0) for the visualization
     df_with_0_0 = pd.DataFrame([[0, 0]], columns=['cumulative_household_weight_prop', 'cumulative_weighted_nb_km_prop'])
-    df_km_per_interval = df_with_0_0.append(df_km_per_interval)
+    df_km_per_interval = df_with_0_0.append(df_km_per_interval, sort=True)
     # Plot figure in French, German and English
     plot_ecdf_figures(df_km_per_interval, nb_observations)
     # Save table as CSV
@@ -188,9 +188,9 @@ def get_nb_km_in_last_12_months_with_weights():
     nb_observations = len(df_vehicles)
     print('Number of private cars with known mileage and known matriculation time:', nb_observations)
     ''' Sort the nb of km made in the last 12 months:
-    Here we sort by the nb of km in the last 12 months and not by the *weighted* nb of km in the last 12 months. 
-    A vehicle with a high mileage, say 40'000 km in the last 12 months, must be at the top of ranking, independently of 
-    its weight. If its weight is small, say 0.2, it just means that this vehicle ist not very representative and will 
+    Here we sort by the nb of km in the last 12 months and not by the *weighted* nb of km in the last 12 months.
+    A vehicle with a high mileage, say 40'000 km in the last 12 months, must be at the top of ranking, independently of
+    its weight. If its weight is small, say 0.2, it just means that this vehicle ist not very representative and will
     be grouped with more vehicles to represent some proportion of the population (say 1%). '''
     df_vehicles.sort_values('nb_km_in_last_12_months', inplace=True)
     # Compute weighted nb of km in last 12 months
