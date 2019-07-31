@@ -1,4 +1,5 @@
-from utils_mtmc.get_mtmc_files import *
+from utils_mtmc.get_mtmc_files import get_vehicles
+from utils_mtmc.compute_confidence_interval import get_weighted_avg_and_std
 import seaborn as sns
 import numpy as np
 import pandas as pd
@@ -32,20 +33,41 @@ def get_average_mileage_per_interval(df_vehicles, nb_intervals):
     nb_observations = len(df_vehicles)  # Statistical bases (!= basis for empirical cumulative distribution function
     ''' Compute the average mileage in Switzerland (all cars) '''
     """ TO DO: COMPUTE MILEAGE IN SWITZERLAND AND ABROAD SEPARATELY """
-    nb_km_in_last_12_months = df_vehicles['weighted_nb_km'].sum() / df_vehicles['household_weight'].sum()
-    print('Number of kilometers in the last 12 months:', nb_km_in_last_12_months)
+    nb_km_in_last_12_months_avg_and_std = get_weighted_avg_and_std(df_vehicles, 'household_weight',
+                                                                   list_of_columns=['nb_km_in_last_12_months'])
+    nb_km_in_last_12_months_avg = nb_km_in_last_12_months_avg_and_std[0]['nb_km_in_last_12_months'][0]
+    nb_km_in_last_12_months_std = nb_km_in_last_12_months_avg_and_std[0]['nb_km_in_last_12_months'][1]
+    nb_km_in_last_12_months_basis = nb_km_in_last_12_months_avg_and_std[1]
+    print('Number of kilometers in the last 12 months:', nb_km_in_last_12_months_avg,
+          '+/-', nb_km_in_last_12_months_std,
+          '(statistical basis:', str(nb_km_in_last_12_months_basis) + ')')
     ''' Compute the average mileage per interval '''
     sum_weights = df_vehicles['household_weight'].sum()
     length_intervals = sum_weights / nb_intervals
     array_of_intervals = np.arange(0, sum_weights+1, length_intervals)
-    df_km_per_interval = df_vehicles.groupby(pd.cut(df_vehicles['cumulative_household_weight'],
-                                                    array_of_intervals)).apply(lambda x: x['weighted_nb_km'].sum() /
-                                                                                         x['household_weight'].sum())
-    df_km_per_interval.to_csv(os.path.join('..', 'data', 'output', 'average_per_interval',
-                                           'average_per_interval.csv'),
+    ''' Here we group by groups of similar cumulative household weight. Since each observation is one car, it represents
+    groups of similar numbers of cars.
+    Then, we apply the function get_weighted_avg_and_std, computing the weighted average and the standard deviation. 
+    This function returns a list of two elements. The first one ist the weighted average and the standard deviation; 
+    The second one is the statistical basis of the computation. Here, we are only interested in the first element.
+    Thus is '[0]' after the parameters of the function below. Moreover, we compute the weighted average and the 
+    standard deviation only for one variable of the dataframe, 'nb_km_in_last_12_months'. We would like to get only the
+    results for this variable. Thus is '['nb_km_in_last_12_months']' written below a the end of the function we apply. 
+    '''
+    df_km_per_interval_avg = df_vehicles.groupby(pd.cut(df_vehicles['cumulative_household_weight'],
+                                                        array_of_intervals)).apply(
+        lambda x: get_weighted_avg_and_std(x, 'household_weight',
+                                           list_of_columns=['nb_km_in_last_12_months'])[0]['nb_km_in_last_12_months'][0])
+    df_km_per_interval_std = df_vehicles.groupby(pd.cut(df_vehicles['cumulative_household_weight'],
+                                                        array_of_intervals)).apply(
+        lambda x: get_weighted_avg_and_std(x, 'household_weight',
+                                           list_of_columns=['nb_km_in_last_12_months'])[0]['nb_km_in_last_12_months'][1])
+    df_km_per_interval = pd.concat([df_km_per_interval_avg, df_km_per_interval_std], axis=1)
+    print(df_km_per_interval)
+    df_km_per_interval.to_csv(os.path.join('..', 'data', 'output', 'average_per_interval', 'average_per_interval.csv'),
                               sep=';',
                               index=False,
-                              header=False)
+                              header=['Average milage of cars per group of cars of the same size in increasing order of mileage', '+/-'])
     print('Number of private cars with known mileage and known matriculation time:', nb_observations)
 
 
