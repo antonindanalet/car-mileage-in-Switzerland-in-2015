@@ -1,10 +1,8 @@
+from get_ecdf import get_ecdf
+from get_average_mileage_per_interval import get_average_mileage_per_interval
 from utils_mtmc.get_mtmc_files import get_vehicles
-from utils_mtmc.compute_confidence_interval import get_weighted_avg_and_std
-import seaborn as sns
-import numpy as np
-import pandas as pd
+
 import matplotlib.pyplot as plt
-import os
 
 
 def run_car_mileage_in_switzerland_in_2015():
@@ -13,171 +11,12 @@ def run_car_mileage_in_switzerland_in_2015():
     ''' Cumulative distribution function: prepare data, plot them and save them as CSV '''
     get_ecdf(nb_intervals, df_vehicles, nb_observations)
     ''' Average mileage per interval '''
-    get_average_mileage_per_interval(df_vehicles, nb_intervals)
-
-
-def get_average_mileage_per_interval(df_vehicles, nb_intervals):
-    """
-    Average mileage per interval
-    :param df_vehicles: the pandas dataframe with the data about the privately-owned vehicles
-    :param nb_intervals: the number of intervals in which we divide the list of vehicles by their mileage
-    :return: nothing, but generates a CSV-file with the results, a figure and prints the main results
-    """
-    ''' Filter the observations to keep only those that can be differentiated between kilometer driven in Switzerland
-    and abroad '''
-    # new column with values: 0 if no km was performed in the last 12 years and
-    #                         with the number of kilometers driven abroad otherwise
-    df_vehicles['dist_abroad'] = df_vehicles.apply(lambda row: (row.nb_km_in_last_12_months != 0) * row.nb_km_abroad,
-                                                   axis=1)
-    df_vehicles = df_vehicles[df_vehicles['dist_abroad'] >= 0]  # All negative observations correspond to no information
-    nb_observations = len(df_vehicles)  # Statistical bases (!= basis for empirical cumulative distribution function
-    ''' Compute the average mileage in Switzerland (all cars) '''
-    """ TO DO: COMPUTE MILEAGE IN SWITZERLAND AND ABROAD SEPARATELY """
-    nb_km_in_last_12_months_avg_and_std = get_weighted_avg_and_std(df_vehicles, 'household_weight',
-                                                                   list_of_columns=['nb_km_in_last_12_months'])
-    nb_km_in_last_12_months_avg = nb_km_in_last_12_months_avg_and_std[0]['nb_km_in_last_12_months'][0]
-    nb_km_in_last_12_months_std = nb_km_in_last_12_months_avg_and_std[0]['nb_km_in_last_12_months'][1]
-    nb_km_in_last_12_months_basis = nb_km_in_last_12_months_avg_and_std[1]
-    print('Number of kilometers in the last 12 months:', nb_km_in_last_12_months_avg,
-          '+/-', nb_km_in_last_12_months_std,
-          '(statistical basis:', str(nb_km_in_last_12_months_basis) + ')')
-    ''' Compute the average mileage per interval '''
-    sum_weights = df_vehicles['household_weight'].sum()
-    length_intervals = sum_weights / nb_intervals
-    array_of_intervals = np.arange(0, sum_weights+1, length_intervals)
-    ''' Here we group by groups of similar cumulative household weight. Since each observation is one car, it represents
-    groups of similar numbers of cars.
-    Then, we apply the function get_weighted_avg_and_std, computing the weighted average and the standard deviation. 
-    This function returns a list of two elements. The first one ist the weighted average and the standard deviation; 
-    The second one is the statistical basis of the computation. Here, we are only interested in the first element.
-    Thus is '[0]' after the parameters of the function below. Moreover, we compute the weighted average and the 
-    standard deviation only for one variable of the dataframe, 'nb_km_in_last_12_months'. We would like to get only the
-    results for this variable. Thus is '['nb_km_in_last_12_months']' written below a the end of the function we apply. 
-    '''
-    df_km_per_interval_avg = df_vehicles.groupby(pd.cut(df_vehicles['cumulative_household_weight'],
-                                                        array_of_intervals)).apply(
-        lambda x: get_weighted_avg_and_std(x, 'household_weight',
-                                           list_of_columns=['nb_km_in_last_12_months'])[0]['nb_km_in_last_12_months'][0])
-    df_km_per_interval_std = df_vehicles.groupby(pd.cut(df_vehicles['cumulative_household_weight'],
-                                                        array_of_intervals)).apply(
-        lambda x: get_weighted_avg_and_std(x, 'household_weight',
-                                           list_of_columns=['nb_km_in_last_12_months'])[0]['nb_km_in_last_12_months'][1])
-    df_km_per_interval = pd.concat([df_km_per_interval_avg, df_km_per_interval_std], axis=1)
-    print(df_km_per_interval)
-    df_km_per_interval.to_csv(os.path.join('..', 'data', 'output', 'average_per_interval', 'average_per_interval.csv'),
-                              sep=';',
-                              index=False,
-                              header=['Average milage of cars per group of cars of the same size in increasing order of mileage', '+/-'])
-    print('Number of private cars with known mileage and known matriculation time:', nb_observations)
-
-
-def get_ecdf(nb_intervals, df_vehicles, nb_observations):
-    # Sum observations by intervals
-    df_km_per_interval = sum_observations_by_intervals(df_vehicles, nb_intervals=nb_intervals)
-    # Add the data point (0,0) for the visualization
-    df_with_0_0 = pd.DataFrame([[0, 0]], columns=['cumulative_household_weight_prop', 'cumulative_weighted_nb_km_prop'])
-    df_km_per_interval = df_with_0_0.append(df_km_per_interval, sort=True)
-    # Plot figure in French, German and English
-    plot_ecdf_figures(df_km_per_interval, nb_observations)
-    # Save table as CSV
-    df_km_per_interval[['cumulative_household_weight_prop',
-                        'cumulative_weighted_nb_km_prop']] \
-        .to_csv(os.path.join('..', 'data', 'output', 'empirical_cumulative_distribution_function',
-                             'car_mileage_in_Switzerland_in_2015.csv'),
-                sep=';',
-                index=False,
-                header=['Cumulative proportion of private cars, in increasing order of mileage',
-                        'Cumulative proportion of total mileage'])
-
-
-def weigthed_average(group):
-    d = group['data']
-    w = group['weights']
-    return (d * w).sum() / w.sum()
-
-
-def plot_ecdf_figures(df_km_per_interval, nb_observations):
-    dict_title = {'fr': 'Répartition des prestations kilométriques des voitures,\nen 2015',
-                  'de': 'Verteilung der Fahrleistung der Personenwagen, 2015',
-                  'en': 'Cumulative distribution of mileage of cars in 2015'}
-    dict_subtitle = {'fr': 'Uniquement les voitures que possèdent les ménages; Prestations durant les 12 mois '
-                           "précédant le jour de l'enquête",
-                     'de': 'Nur Personenwagen, die sich im Besitz von Haushalten befinden; Fahreleistung in den 12 '
-                           'Monaten vor dem Befragungstag',
-                     'en': 'Only private cars owned by households; Mileage in the 12 months before the day of the '
-                           'survey'}
-    dict_x_label = {'fr': "Proportion des voitures dans l'ordre croissant de leur prestation kilométrique",
-                    'de': 'Anteil der Privatwagen in aufsteigender Reihenfolge ihrer Fahrleistung',
-                    'en': 'Proportion of privately owned vehicles in the increasing order of mileage'}
-    dict_y_label = {'fr': 'Proportion des prestations kilométriques totales',
-                    'de': 'Anteil der gesamten Fahrleistung von Privatwagen',
-                    'en': 'Proportion of total mileage of privately owned cars'}
-    cumulative_nb_km_prop_for_70_pc = int(round(100 * df_km_per_interval.iloc[7]['cumulative_weighted_nb_km_prop']))
-    dict_example = {'fr': 'Exemple de lecture: en 2015, 70% des voitures (avec les prestations kilométriques les plus '
-                          "faibles) ont réalisé " + str(cumulative_nb_km_prop_for_70_pc) +
-                          '% des\nprestations kilométriques totales.\n\n'
-                          'Base: ' + str("{0:,g}".format(nb_observations)).replace(",", " ") +
-                          ' voitures qui ont été mises en circulation avant 2015 et avec '
-                          "indication valable de l'âge du véhicule et des\nprestations kilométriques annuelles\n\n"
-                          'Source: OFS, ARE - Microrecensement mobilité et transports (MRMT)',
-                    'de': 'Lesebeispiel: 2015 haben 70% der Personenwagen (in ansteigender Reihenfolge ihrer '
-                          'Fahrleistung), ' + str(cumulative_nb_km_prop_for_70_pc) +
-                          '% der gesamten\nFahrleistung von Personenwagen realisiert.\n\n'
-                          'Basis: ' + str("{0:,g}".format(nb_observations)).replace(",", " ") +
-                          ' Privatwagen, die vor 2015 in Verkehr gesetzt wurden und gültige Angaben zum Fahrzeugalter '
-                          'und zur\nJahresfahrleistung aufweisen\n\n'
-                          'Quelle: BFS, ARE - Mikrozensus Mobilität und Verkehr (MZMV)',
-                    'en': 'Reading example: in 2015, 70% of privately owned cars with the smallest mileage '
-                          'traveled ' + str(cumulative_nb_km_prop_for_70_pc) +
-                          '% of the total mileage\nof privately owned cars.\n\n'
-                          'Basis: ' + str("{0:,g}".format(nb_observations)).replace(",", " ") +
-                          ' cars that were put into service before 2015 and with a valid age of the vehicule and '
-                          'mileage in the last 12 months\n\n'
-                          'Source: FSO, ARE - Mobility and Transport Microcensus (MTMC)'}
-    sns.set(rc={'figure.figsize': (6.4, 6.4)})
-    sns.set_style("whitegrid", {'axes.spines.bottom': False,
-                                'axes.spines.left': False,
-                                'axes.spines.right': False,
-                                'axes.spines.top': False})
-    plt.subplots_adjust(bottom=0.26)  # Add some place below the figure
-    for language in ['fr', 'de', 'en']:
-        plt.clf()
-        sns_plot = sns.pointplot(x='cumulative_household_weight_prop', y='cumulative_weighted_nb_km_prop',
-                                 data=df_km_per_interval)
-        sns_plot.set(yticklabels=['', '0%', '20%', '40%', '60%', '80%', '100%'])
-        sns_plot.set(xticklabels=['0%', '10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'])
-        if language == 'fr':  # Title on two lines
-            plt.text(x=-2.15, y=1.125, s=dict_title[language], fontsize=16, weight='bold')
-            plt.text(x=-2.15, y=1.075, s=dict_subtitle[language], fontsize=8)
-        else:  # Title on one line
-            plt.text(x=-2.15, y=1.15, s=dict_title[language], fontsize=16, weight='bold')
-            plt.text(x=-2.15, y=1.1, s=dict_subtitle[language], fontsize=8)
-        plt.text(x=-2.15, y=-0.5, s=dict_example[language], fontsize=8)
-        sns_plot.set_xlabel(dict_x_label[language])
-        sns_plot.set_ylabel(dict_y_label[language])
-        sns_figure = sns_plot.get_figure()
-        sns_figure.savefig('../data/output/empirical_cumulative_distribution_function/'
-                           'car_mileage_in_Switzerland_in_2015_' + language + '.png', dpi=600)
-
-
-def sum_observations_by_intervals(df_vehicles, nb_intervals):
-    sum_weigths = df_vehicles['household_weight'].sum()
-    sum_nb_km_in_last_12_months = df_vehicles['weighted_nb_km'].sum()
-    length_intervals = sum_weigths / nb_intervals
-    array_of_intervals = np.arange(0, sum_weigths + length_intervals, length_intervals)
-    df_km_per_interval = df_vehicles.groupby(pd.cut(df_vehicles['cumulative_household_weight'],
-                                                    array_of_intervals)).sum()
-    del df_km_per_interval['cumulative_household_weight']
-    df_km_per_interval['household_weight_prop'] = df_km_per_interval['household_weight'] / sum_weigths
-    del df_km_per_interval['household_weight']
-    df_km_per_interval['weighted_nb_km_prop'] = \
-        df_km_per_interval['weighted_nb_km'] / sum_nb_km_in_last_12_months
-    del df_km_per_interval['weighted_nb_km']
-    df_km_per_interval['cumulative_household_weight_prop'] = df_km_per_interval['household_weight_prop'].cumsum(axis=0)
-    df_km_per_interval['cumulative_weighted_nb_km_prop'] = df_km_per_interval['weighted_nb_km_prop'].cumsum(axis=0)
-    del df_km_per_interval['household_weight_prop']
-    del df_km_per_interval['weighted_nb_km_prop']
-    return df_km_per_interval
+    get_average_mileage_per_interval(df_vehicles, nb_intervals, nb_observations)
+    ''' Test '''
+    df_vehicles[df_vehicles['nb_km_in_last_12_months'] > 60000] = 60000
+    fig, ax = plt.subplots()
+    df_vehicles.hist(column='nb_km_in_last_12_months', bins=12, ax=ax, density=True)
+    fig.savefig('../data/output/test.png', dpi=600)
 
 
 def get_nb_km_in_last_12_months_with_weights():
