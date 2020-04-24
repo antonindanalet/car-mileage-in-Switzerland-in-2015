@@ -17,7 +17,7 @@ For it to produce the results, you also need the raw data of the Transport and M
 
 ### Run the code
 
-Please copy the file <em>fahrzeuge.csv</em> that you receive from FSO in the folder "data". Then run <em>run_car_mileage_in_Switzerland_in_2015.py</em>. 
+Please copy the file <em>fahrzeuge.csv</em> that you receive from the Federal Statistical Office in the folder "data". Then run <em>run_car_mileage_in_Switzerland_in_2015.py</em>. 
 
 DO NOT commit or share in any way the CSV-files <em>fahrzeuge.csv</em>! These are personal data.
 
