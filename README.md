@@ -19,7 +19,7 @@ For it to produce the results, you also need the raw data of the Transport and M
 
 Please copy the file <em>fahrzeuge.csv</em> that you receive from the Federal Statistical Office in the folder "<a href="https://github.com/antonindanalet/car-mileage-in-Switzerland-in-2015/tree/master/data/input">data/input</a>". Then run <em><a href="https://github.com/antonindanalet/car-mileage-in-Switzerland-in-2015/blob/master/src/run_car_mileage_in_Switzerland_in_2015.py">run_car_mileage_in_Switzerland_in_2015.py</a></em>. 
 
-DO NOT commit or share in any way the CSV-files <em>fahrzeuge.csv</em>! These are personal data.
+DO NOT commit or share in any way the CSV-file <em>fahrzeuge.csv</em>! These are personal data.
 
 ## Contact
 
